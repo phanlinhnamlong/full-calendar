@@ -1,28 +1,47 @@
-import React, { useState, useRef, useEffect } from 'react';
-import FullCalendar from '@fullcalendar/react'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import interactionPlugin, { Draggable } from '@fullcalendar/interaction';
-import { DatePicker } from 'antd';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
+import React, { useState, useRef, useEffect } from "react";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import interactionPlugin, { Draggable } from "@fullcalendar/interaction";
+import { DatePicker } from "antd";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import dayjs from 'dayjs';
 
-const { RangePicker } = DatePicker;
+const viewOptions = [
+  { value: "timeGridDay", label: "Day" },
+  { value: "timeGridWeek", label: "Week" },
+  { value: "dayGridMonth", label: "Month" },
+];
 
-const CalendarComponent = ({events}) => {
-  const [initialView, setInitialView] = useState('dayGridMonth')
-  const calendar = useRef(null)
-  const [open, setOpen] = useState(false)
-  const [eventsCalendar, setEventsCalendar] = useState([])
 
+const CalendarComponent = () => {
+  const [initialView, setInitialView] = useState("dayGridMonth");
+  const calendar = useRef(null);
+  const [eventsCalendar, setEventsCalendar] = useState([]);
+  const [value, setValue] = useState(new Date());
+  const [popup, setPopup] = useState({ visible: false, x: 0, y: 0 });
+  const weekFormat = 'DD/MM/YYYY';
+  const customWeekStartEndFormat = (value) =>
+    `${dayjs(value).startOf('week').format(weekFormat)} ~ ${dayjs(value)
+      .endOf('week')
+      .format(weekFormat)}`;
+      const rangePickerProps = {
+        timeGridDay: { format: "DD/MM/YYYY" },
+        timeGridWeek: { picker: "week", format: customWeekStartEndFormat },
+        dayGridMonth: { picker: "month" },
+      };
   const handleChange = (date) => {
-    console.log(date[0].format('DD/MM/YYYY'))
-    console.log(date[1].format('DD/MM/YYYY'))
-  }
+    if (date) {
+      const calendarApi = calendar.current.getApi();
+      calendarApi.gotoDate(date.toDate()); 
+    }
+  };
 
-  const handleDayClick = (date) => {
-    console.log(date.dateStr)
-    setOpen(true)
-  }
+  const handleDayClick = (event) => {
+    const x = event.jsEvent.clientX;
+    const y = event.jsEvent.clientY;
+
+    setPopup({ visible: !popup.visible, x, y });
+  };
 
   useEffect(() => {
     let draggableEl = document.getElementById("external-events");
@@ -37,25 +56,26 @@ const CalendarComponent = ({events}) => {
           id: id,
           todo: todo,
           name: name,
-          time:time,
-          create: true
+          time: time,
+          create: true,
         };
-      }
+      },
     });
   });
 
   const handleEventDrop = (info) => {
-    const divEl = info.draggedEl
-    const eventData = divEl.dataset
+    const divEl = info.draggedEl;
+    const eventData = divEl.dataset;
     const newEvent = {
       id: eventData.id,
       todo: eventData.todo,
       name: eventData.name,
-      time: eventData.time
+      time: eventData.time,
     };
 
     setEventsCalendar([...eventsCalendar, newEvent]);
-  }
+  };
+
   const renderContent = (info) => {
     return (
       <div>
@@ -63,62 +83,72 @@ const CalendarComponent = ({events}) => {
         <p>{info.event.extendedProps.name}</p>
         <p>{info.event.extendedProps.time}</p>
       </div>
-    )
-  }
-  console.log(eventsCalendar)
-  return (    
-    <div className='w-3/4'> 
-      <header className="flex gap-4 justify-center">
-        <div className="mb-4">
-        <select value={initialView} onChange={(e)=> {
-          setInitialView(e.target.value)
-          if(calendar.current) {
-            calendar.current.getApi().changeView(e.target.value)
-          }
-        }} className='p-2 border border-[#d9d9d9] bg-white rounded-[4px] '>
-        <option value="dayGridDay">Day</option>
-              <option value="dayGridWeek">Week</option>
-              <option value="dayGridMonth">Month</option>
-        </select>
-        </div>
-        <div>
-        <RangePicker onChange={handleChange} picker='week' />
-        </div>
+    );
+  };
 
-      </header>
-      {open && 
-        <div className='absolute left-32 top-32  z-50 flex flex-col gap-4 p-4 w-[200px] rounded-[2px] text-start shadow' 
-        >
-          <p>New Job</p>
-          <p>Add Time Off</p>
-          <p>Add Custom Event </p>
+  return (
+    <div className="calendar">
+      <div className="calendarSelect">
+        <div>
+          <select
+            value={initialView}
+            onChange={(e) => {
+              setInitialView(e.target.value);
+              setValue(null);
+              if (calendar.current) {
+                calendar.current.getApi().changeView(e.target.value);
+              }
+            }}
+          >
+            {viewOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
-      }
-      <FullCalendar
-        plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, resourceTimeGridPlugin]}
-        initialView={initialView}
-        ref={calendar}
-        events={eventsCalendar.slice(0,1).map(i=>({
-          extendedProps: {
-            todo: i.todo,
-            name: i.name
-          }
-        }))}
-        headerToolbar={false}
-        dateClick={handleDayClick}
-        editable={true}
-        droppable={true}
-        eventDrop={handleEventDrop}
-        eventContent={renderContent}
-        slotLabelFormat={{
-          hour: 'numeric',
-          minute: '2-digit',
-          omitZeroMinute: true,
-          meridiem: 'short'
-        }}
-      />
-    </div>  
-  )
+        {rangePickerProps[initialView] && (
+          <DatePicker
+            {...rangePickerProps[initialView]}
+            onChange={handleChange}
+          />
+        )}
+      </div>
+      <div>
+        <FullCalendar
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          initialView={initialView}
+          initialDate={value}
+          ref={calendar}
+          events={eventsCalendar.map((i) => ({
+            extendedProps: {
+              todo: i.todo,
+              name: i.name,
+            },
+          }))}
+          headerToolbar={false}
+          dateClick={handleDayClick}
+          droppable={true}
+          selectable={true}
+          eventDrop={handleEventDrop}
+          eventContent={renderContent}
+        />
+        {popup.visible && (
+          <div
+            style={{        
+              top: popup.y - 120,
+              left: popup.x - 80,
+            }}
+            className="popup"
+          >
+            <span>New Job</span>
+            <span>Add Time Off</span>
+            <span>Add Custom Event </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default CalendarComponent;
