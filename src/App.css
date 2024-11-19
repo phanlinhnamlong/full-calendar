@@ -8,6 +8,11 @@
   width: 75%
 }
 
+.renderContent {
+  background-color: rgb(167, 240, 197);
+  width: 100%;
+}
+
 .calendarSelect {
   display: flex;
   justify-content: center;
