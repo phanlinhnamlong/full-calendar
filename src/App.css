@@ -20,6 +20,7 @@ select {
   background-color: white;
   border: 1px solid #d9d9d9;
   border-radius: 4px;
+  margin-top: 4px ;
 }
 
 .popup {

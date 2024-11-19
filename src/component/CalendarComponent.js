@@ -16,20 +16,33 @@ const viewOptions = [
 const CalendarComponent = () => {
   const [initialView, setInitialView] = useState("dayGridMonth");
   const calendar = useRef(null);
-  const [eventsCalendar, setEventsCalendar] = useState([]);
-  const [value, setValue] = useState(new Date());
+  const [eventsCalendar, setEventsCalendar] = useState([
+    {todo: 'Meeting', name: 'Linh', time: '2h', id: '0', start: new Date()}
+  ]);
+  const [initialDate, setInitialDate] = useState(new Date());
   const [popup, setPopup] = useState({ visible: false, x: 0, y: 0 });
   const weekFormat = 'DD/MM/YYYY';
+
   const customWeekStartEndFormat = (value) =>
     `${dayjs(value).startOf('week').format(weekFormat)} ~ ${dayjs(value)
-      .endOf('week')
-      .format(weekFormat)}`;
-      const rangePickerProps = {
-        timeGridDay: { format: "DD/MM/YYYY" },
-        timeGridWeek: { picker: "week", format: customWeekStartEndFormat },
-        dayGridMonth: { picker: "month" },
-      };
-  const handleChange = (date) => {
+    .endOf('week')
+    .format(weekFormat)}`;
+
+  const rangePickerProps = {
+    timeGridDay: { format: "DD/MM/YYYY" },
+    timeGridWeek: { picker: "week", format: customWeekStartEndFormat },
+    dayGridMonth: { picker: "month" },
+  };
+
+  const handleChangeSelect = (e) => {
+    setInitialView(e.target.value);
+    setInitialDate(null);
+    if (calendar.current) {
+      calendar.current.getApi().changeView(e.target.value);
+    }
+  };
+
+  const handleChangeDatePicker = (date) => {
     if (date) {
       const calendarApi = calendar.current.getApi();
       calendarApi.gotoDate(date.toDate()); 
@@ -43,37 +56,27 @@ const CalendarComponent = () => {
     setPopup({ visible: !popup.visible, x, y });
   };
 
-  useEffect(() => {
-    let draggableEl = document.getElementById("external-events");
-    new Draggable(draggableEl, {
+  useEffect(() => { 
+    new Draggable(document.getElementById("external-events"), {
       itemSelector: ".fc-event",
       eventData: function (eventEl) {
-        let id = eventEl.dataset.id;
-        let todo = eventEl.dataset.todo;
-        let name = eventEl.dataset.name;
-        let time = eventEl.dataset.time;
         return {
-          id: id,
-          todo: todo,
-          name: name,
-          time: time,
+          ...eventEl.dataset,
           create: true,
         };
       },
     });
-  });
+  }, []);
 
-  const handleEventDrop = (info) => {
-    const divEl = info.draggedEl;
-    const eventData = divEl.dataset;
+  const handleEventReceive = (info) => {
+    const eventData = info.draggedEl.dataset;
     const newEvent = {
-      id: eventData.id,
-      todo: eventData.todo,
-      name: eventData.name,
-      time: eventData.time,
+      ...eventData,
+      start: info.event.start,
+      end: info.event.end,
     };
 
-    setEventsCalendar([...eventsCalendar, newEvent]);
+    setEventsCalendar(eventsCalendar.concat(newEvent));
   };
 
   const renderContent = (info) => {
@@ -93,11 +96,7 @@ const CalendarComponent = () => {
           <select
             value={initialView}
             onChange={(e) => {
-              setInitialView(e.target.value);
-              setValue(null);
-              if (calendar.current) {
-                calendar.current.getApi().changeView(e.target.value);
-              }
+            handleChangeSelect(e)
             }}
           >
             {viewOptions.map((option) => (
@@ -110,7 +109,8 @@ const CalendarComponent = () => {
         {rangePickerProps[initialView] && (
           <DatePicker
             {...rangePickerProps[initialView]}
-            onChange={handleChange}
+            onChange={handleChangeDatePicker}
+            defaultValue= {dayjs()} 
           />
         )}
       </div>
@@ -118,19 +118,21 @@ const CalendarComponent = () => {
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView={initialView}
-          initialDate={value}
+          initialDate={initialDate}
           ref={calendar}
-          events={eventsCalendar.map((i) => ({
+          events={eventsCalendar?.map((i) => ({
             extendedProps: {
               todo: i.todo,
               name: i.name,
+              time: i.time
             },
+            start: i.start
           }))}
           headerToolbar={false}
           dateClick={handleDayClick}
           droppable={true}
           selectable={true}
-          eventDrop={handleEventDrop}
+          eventReceive={handleEventReceive}
           eventContent={renderContent}
         />
         {popup.visible && (

@@ -1,12 +1,12 @@
 const events = [
   { 
-    id: 1,
+    id: '1',
     todo: "Task 1",
     time: "10h00 a.m",
     name: 'Linh'
   },
   { 
-    id: 2,
+    id: '2',
     todo: "Task 2",
     time: "14h00 p.m",
     name: 'Linh'
