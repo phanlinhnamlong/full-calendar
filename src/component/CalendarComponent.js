@@ -79,31 +79,23 @@ const CalendarComponent = ({events, setEvents}) => {
       cleanupFullCalendar?.();
     };
   }, []);
-  
+
   const handleEventReceive = (info) => {
     const { draggedEl, event } = info;
-    if(draggedEl.fcSeg) {
-      const eventData = draggedEl.fcSeg.eventRange.def.extendedProps;
-      const newEvent = {
-        ...eventData,
-        time: dayjs(event.start).format('hh:mm'),
-        start: event.start,
-      };
-      const updateEvents = events.filter(i=>i.id !== newEvent.id)
-      setEvents(updateEvents)
-      setEventsCalendar(eventsCalendar.concat(newEvent));
-    }else {
-    const eventData = draggedEl.dataset;
+    const eventData = draggedEl.fcSeg 
+      ? draggedEl.fcSeg.eventRange.def.extendedProps
+      : draggedEl.dataset;
+
     const newEvent = {
       ...eventData,
       time: dayjs(event.start).format('hh:mm'),
       start: event.start,
-      resourceId: event._def.resourceIds[0]
+      ...(draggedEl.fcSeg ? {} : { resourceId: event._def.resourceIds[0] })
     };
+    
     const updateEvents = events.filter(i=>i.id !== newEvent.id)
     setEvents(updateEvents)
     setEventsCalendar(eventsCalendar.concat(newEvent));
-  }
   };
 
   const renderContent = (info) => {
