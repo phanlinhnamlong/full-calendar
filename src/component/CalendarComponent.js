@@ -12,7 +12,7 @@ const viewOptions = [
   { value: "resourceDayGridMonth", label: "Month" },
 ];
 const initialEventsCalenDar = [
-    {todo: 'Meeting', name: 'Linh', time: dayjs().format('hh:mm'), id: '0', start: new Date(), resourceId: 'a'}
+    {todo: 'Meeting', name: 'Linh', time: dayjs().format('hh:mm'), id: '0', calendarId: 0, start: new Date(), resourceId: 'a'}
 ]
 const resources = [{ id: 'a', title: 'Phòng họp A' }];
 
@@ -62,10 +62,11 @@ const CalendarComponent = ({events, setEvents}) => {
   
       const draggable = new Draggable(element, {
         itemSelector: ".fc-event",
-        eventData: (eventEl) => ({
+        eventData: (eventEl) => {
+          return({
           ...eventEl.dataset,
           create: true
-        })
+        })}
       });
   
       return () => draggable.destroy();
@@ -73,7 +74,7 @@ const CalendarComponent = ({events, setEvents}) => {
   
     const cleanupExternalEvents = initializeDraggable("external-events");
     const cleanupFullCalendar = initializeDraggable("full-calendar");
-  
+    
     return () => {
       cleanupExternalEvents?.();
       cleanupFullCalendar?.();
@@ -88,23 +89,33 @@ const CalendarComponent = ({events, setEvents}) => {
 
     const newEvent = {
       ...eventData,
+      calendarId: Math.floor(1000 + Math.random() * 9000),
       time: dayjs(event.start).format('hh:mm'),
       start: event.start,
       ...(draggedEl.fcSeg ? {} : { resourceId: event._def.resourceIds[0] })
     };
-    
+
     const updateEvents = events.filter(i=>i.id !== newEvent.id)
     setEvents(updateEvents)
     setEventsCalendar(eventsCalendar.concat(newEvent));
   };
 
+  const handleEventReceiveOutside = ({ event })=>{
+    const {id, name, time, todo, calendarId} = event._def.extendedProps
+    const newEvent = { id, name, time, todo, calendarId };
+    const updateEvents = eventsCalendar.filter(i=>i.calendarId !== newEvent.calendarId)
+
+    setEventsCalendar(updateEvents)
+    setEvents(events.concat(newEvent));
+  }
+
   const renderContent = (info) => {
-    const { todo, name, time } = info.event.extendedProps;
+    const { todo, name, start } = info.event.extendedProps;
     return (
       <div className="renderContent">
         <p>{todo}</p>
         <p>{name}</p>
-        <p>{time}</p>
+        <p>{dayjs(start).format('hh:mm')}</p>
       </div>
     );
   };
@@ -148,10 +159,12 @@ const CalendarComponent = ({events, setEvents}) => {
           resources={resources}
           headerToolbar={{start: '', end: '', center:'title'}}
           dateClick={handleDayClick}
+          editable={true}
           droppable={true}
           selectable={true}
           eventReceive={handleEventReceive}
           eventContent={renderContent}
+          eventDragStop={handleEventReceiveOutside}
         />
         {popup.visible && (
           <div
