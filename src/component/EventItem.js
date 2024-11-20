@@ -22,7 +22,7 @@ const EventItem = ({event}) => {
       data-time={time}
       data-id={id}
       style={{
-        backgroundColor: generateColor()
+        borderLeft: `4px solid ${generateColor()}`
       }}
     >
       <p>{todo}</p>

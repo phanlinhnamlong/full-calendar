@@ -1,29 +1,24 @@
 import React, { useState, useRef, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin, { Draggable } from "@fullcalendar/interaction";
 import { DatePicker } from "antd";
-import timeGridPlugin from "@fullcalendar/timegrid";
 import dayjs from 'dayjs';
-import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
-import listPlugin from '@fullcalendar/list';
+import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
+import resourceDayGridPlugin from '@fullcalendar/resource-daygrid';
 
 const viewOptions = [
-  { value: "resourceTimelineDay", label: "Day" },
-  { value: "resourceTimelineWeek", label: "Week" },
-  { value: "resourceTimelineMonth", label: "Month" },
+  { value: "resourceTimeGridDay", label: "Day" },
+  { value: "resourceTimeGridWeek", label: "Week" },
+  { value: "resourceDayGridMonth", label: "Month" },
 ];
 const initialEventsCalenDar = [
-    {todo: 'Meeting', name: 'Linh', time: '2h', id: '0', start: new Date(), resourceId: 'a'}
+    {todo: 'Meeting', name: 'Linh', time: dayjs().format('hh:mm'), id: '0', start: new Date(), resourceId: 'a'}
 ]
-const resources = [
-  { id: 'a', title: 'Phòng họp A' },
-  { id: 'b', title: 'Phòng họp B' },
-];
+const resources = [{ id: 'a', title: 'Phòng họp A' }];
 
 const CalendarComponent = ({events, setEvents}) => {
   const calendar = useRef(null);
-  const [initialView, setInitialView] = useState("resourceTimelineMonth");
+  const [initialView, setInitialView] = useState("resourceDayGridMonth");
   const [initialDate, setInitialDate] = useState(new Date());
   const [eventsCalendar, setEventsCalendar] = useState(initialEventsCalenDar);
   const [popup, setPopup] = useState({ visible: false, x: 0, y: 0 });
@@ -34,9 +29,9 @@ const CalendarComponent = ({events, setEvents}) => {
     .format('DD/MM/YYYY')}`;
 
   const rangePickerProps = {
-    resourceTimelineDay: { format: "DD/MM/YYYY" },
-    resourceTimelineWeek: { picker: "week", format: customWeekStartEndFormat },
-    resourceTimelineMonth: { picker: "month" },
+    resourceTimeGridDay: { format: "DD/MM/YYYY" },
+    resourceTimeGridWeek: { picker: "week", format: customWeekStartEndFormat },
+    resourceDayGridMonth: { picker: "month" },
   };
 
   const handleChangeSelect = (e) => {
@@ -60,7 +55,8 @@ const CalendarComponent = ({events, setEvents}) => {
   };
 
   useEffect(() => { 
-    const externalEventsElement = document.getElementById("external-events");
+    const externalEventsElement = document.getElementById("external-events");  
+
     if (externalEventsElement) {
       const draggable = new Draggable(externalEventsElement, {
         itemSelector: ".fc-event",
@@ -76,11 +72,32 @@ const CalendarComponent = ({events, setEvents}) => {
     }
   }, []);
 
+  useEffect(() => { 
+    const externalEventsElement = document.getElementById('full-calendar');
+    if (externalEventsElement) {
+      const draggable = new Draggable(externalEventsElement, {
+        itemSelector: ".fc-event",
+        eventData: (eventEl) => {
+          console.log(eventEl)
+          return({
+            ...eventEl.dataset,
+            create: true
+          })
+      }});
+  
+      return () => {
+        draggable.destroy();
+      };
+    }
+  }, []);
+
   const handleEventReceive = (info) => {
+    console.log(info)
     const { draggedEl, event } = info;
     const eventData = draggedEl.dataset;
     const newEvent = {
       ...eventData,
+      time: dayjs(event.start).format('hh:mm'),
       start: event.start,
       resourceId: event._def.resourceIds[0]
     };
@@ -125,23 +142,19 @@ const CalendarComponent = ({events, setEvents}) => {
           />
         )}
       </div>
-      <div>
+      <div id="full-calendar">
         <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, resourceTimelinePlugin, listPlugin]}
+          plugins={[interactionPlugin, resourceTimeGridPlugin, resourceDayGridPlugin]}
           initialView={initialView}
           initialDate={initialDate}
           ref={calendar}
           events={eventsCalendar?.map((i) => ({
-            extendedProps: {
-              todo: i.todo,
-              name: i.name,
-              time: i.time
-            },
+            extendedProps: i,
             start: i.start,
             resourceId: i.resourceId
           }))}
           resources={resources}
-          headerToolbar={false}
+          headerToolbar={{start: '', end: '', center:'title'}}
           dateClick={handleDayClick}
           droppable={true}
           selectable={true}

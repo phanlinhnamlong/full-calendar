@@ -9,10 +9,16 @@
 }
 
 .renderContent {
-  background-color: rgb(167, 240, 197);
+  background-color: rgb(201, 230, 154);
   width: 100%;
+  margin-top: -15px;
+  color: black;
+  padding: 8px;
 }
-
+.fc-v-event {
+  background-color: transparent;
+  border: none;
+}
 .calendarSelect {
   display: flex;
   justify-content: center;
@@ -54,17 +60,15 @@ span:hover {
   background-color: #fef08a;
 }
 
-.sibar {
+.sidebar {
   width: 25%;
   height: 100vh;
   padding: 16px;
 }
 
 .sidebarItem {
-  color: white; 
   padding: 8px; 
-  border: 1px solid; 
-  background-color: #f0fdf4;
+  background-color: rgb(201, 230, 154);
   border-right-width: 2px; 
   cursor: move; 
   width: 200px; 
