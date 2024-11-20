@@ -78,7 +78,6 @@ const CalendarComponent = ({events, setEvents}) => {
       const draggable = new Draggable(externalEventsElement, {
         itemSelector: ".fc-event",
         eventData: (eventEl) => {
-          console.log(eventEl)
           return({
             ...eventEl.dataset,
             create: true
@@ -92,8 +91,18 @@ const CalendarComponent = ({events, setEvents}) => {
   }, []);
 
   const handleEventReceive = (info) => {
-    console.log(info)
     const { draggedEl, event } = info;
+    if(draggedEl.fcSeg) {
+      const eventData = draggedEl.fcSeg.eventRange.def.extendedProps;
+      const newEvent = {
+        ...eventData,
+        time: dayjs(event.start).format('hh:mm'),
+        start: event.start,
+      };
+      const updateEvents = events.filter(i=>i.id !== newEvent.id)
+      setEvents(updateEvents)
+      setEventsCalendar(eventsCalendar.concat(newEvent));
+    }else {
     const eventData = draggedEl.dataset;
     const newEvent = {
       ...eventData,
@@ -104,6 +113,7 @@ const CalendarComponent = ({events, setEvents}) => {
     const updateEvents = events.filter(i=>i.id !== newEvent.id)
     setEvents(updateEvents)
     setEventsCalendar(eventsCalendar.concat(newEvent));
+  }
   };
 
   const renderContent = (info) => {
