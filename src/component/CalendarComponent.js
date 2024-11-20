@@ -54,11 +54,13 @@ const CalendarComponent = ({events, setEvents}) => {
     }));
   };
 
-  useEffect(() => { 
-    const externalEventsElement = document.getElementById("external-events");  
-
-    if (externalEventsElement) {
-      const draggable = new Draggable(externalEventsElement, {
+  useEffect(() => {
+    const initializeDraggable = (elementId) => {
+      const element = document.getElementById(elementId);
+      
+      if (!element) return null;
+  
+      const draggable = new Draggable(element, {
         itemSelector: ".fc-event",
         eventData: (eventEl) => ({
           ...eventEl.dataset,
@@ -66,30 +68,18 @@ const CalendarComponent = ({events, setEvents}) => {
         })
       });
   
-      return () => {
-        draggable.destroy();
-      };
-    }
-  }, []);
-
-  useEffect(() => { 
-    const externalEventsElement = document.getElementById('full-calendar');
-    if (externalEventsElement) {
-      const draggable = new Draggable(externalEventsElement, {
-        itemSelector: ".fc-event",
-        eventData: (eventEl) => {
-          return({
-            ...eventEl.dataset,
-            create: true
-          })
-      }});
+      return () => draggable.destroy();
+    };
   
-      return () => {
-        draggable.destroy();
-      };
-    }
+    const cleanupExternalEvents = initializeDraggable("external-events");
+    const cleanupFullCalendar = initializeDraggable("full-calendar");
+  
+    return () => {
+      cleanupExternalEvents?.();
+      cleanupFullCalendar?.();
+    };
   }, []);
-
+  
   const handleEventReceive = (info) => {
     const { draggedEl, event } = info;
     if(draggedEl.fcSeg) {
