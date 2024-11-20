@@ -5,19 +5,25 @@ import interactionPlugin, { Draggable } from "@fullcalendar/interaction";
 import { DatePicker } from "antd";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import dayjs from 'dayjs';
+import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
+import listPlugin from '@fullcalendar/list';
 
 const viewOptions = [
-  { value: "timeGridDay", label: "Day" },
-  { value: "timeGridWeek", label: "Week" },
-  { value: "dayGridMonth", label: "Month" },
+  { value: "resourceTimelineDay", label: "Day" },
+  { value: "resourceTimelineWeek", label: "Week" },
+  { value: "resourceTimelineMonth", label: "Month" },
 ];
 const initialEventsCalenDar = [
-    {todo: 'Meeting', name: 'Linh', time: '2h', id: '0', start: new Date()}
+    {todo: 'Meeting', name: 'Linh', time: '2h', id: '0', start: new Date(), resourceId: 'a'}
 ]
+const resources = [
+  { id: 'a', title: 'Phòng họp A' },
+  { id: 'b', title: 'Phòng họp B' },
+];
 
 const CalendarComponent = ({events, setEvents}) => {
   const calendar = useRef(null);
-  const [initialView, setInitialView] = useState("dayGridMonth");
+  const [initialView, setInitialView] = useState("resourceTimelineMonth");
   const [initialDate, setInitialDate] = useState(new Date());
   const [eventsCalendar, setEventsCalendar] = useState(initialEventsCalenDar);
   const [popup, setPopup] = useState({ visible: false, x: 0, y: 0 });
@@ -28,9 +34,9 @@ const CalendarComponent = ({events, setEvents}) => {
     .format('DD/MM/YYYY')}`;
 
   const rangePickerProps = {
-    timeGridDay: { format: "DD/MM/YYYY" },
-    timeGridWeek: { picker: "week", format: customWeekStartEndFormat },
-    dayGridMonth: { picker: "month" },
+    resourceTimelineDay: { format: "DD/MM/YYYY" },
+    resourceTimelineWeek: { picker: "week", format: customWeekStartEndFormat },
+    resourceTimelineMonth: { picker: "month" },
   };
 
   const handleChangeSelect = (e) => {
@@ -76,6 +82,7 @@ const CalendarComponent = ({events, setEvents}) => {
     const newEvent = {
       ...eventData,
       start: event.start,
+      resourceId: event._def.resourceIds[0]
     };
     const updateEvents = events.filter(i=>i.id !== newEvent.id)
     setEvents(updateEvents)
@@ -120,7 +127,7 @@ const CalendarComponent = ({events, setEvents}) => {
       </div>
       <div>
         <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, resourceTimelinePlugin, listPlugin]}
           initialView={initialView}
           initialDate={initialDate}
           ref={calendar}
@@ -130,8 +137,10 @@ const CalendarComponent = ({events, setEvents}) => {
               name: i.name,
               time: i.time
             },
-            start: i.start
+            start: i.start,
+            resourceId: i.resourceId
           }))}
+          resources={resources}
           headerToolbar={false}
           dateClick={handleDayClick}
           droppable={true}
